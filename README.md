@@ -1,5 +1,9 @@
 # Black Hole Visualization From Scratch
 
+Detailed explanation writeup WIP.
+- The simulation marches a grid of light rays (one per pixel) from the camera and numerically approximates the null geodesic equations for the Schwarzschild metric. The light rays curve and hit objects, which determine the color of the pixel.
+- For speed of computation, and possible because of spherical symmetry, null geodesics are computed on the equator and rotated into place
+
 ### Progress Screenshots
 
 - Added background stars
@@ -18,7 +22,7 @@
 - Built euclidean engine first
 ![Older Screenshot](screenshots/Screenshot%20from%202025-10-21%2019-07-02.png?raw=true "screenshot")
 
-- Drew a circle
+- Drew a circle!
 ![Older Screenshot](screenshots/Screenshot%20from%202025-10-18%2022-30-28.png?raw=true "screenshot")
 
 
