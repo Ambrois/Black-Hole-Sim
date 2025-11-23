@@ -381,15 +381,15 @@ struct SC_Null_Geodesic{
 
 // ------------------- Make Geodesic Support Functions
 
-float init_b(float r, float psi, SC_Metric metric) {
-  return r*sin(psi) / max(1e-12, sqrt(f(r, metric)));
+float init_b(float r, float sin_psi, SC_Metric metric) {
+  return r*sin_psi / max(1e-12, sqrt(f(r, metric)));
 }
 
 // sigma here is the sign for du/dphi, not dr/lambda
-float init_sigma(float psi) {
-  if (cos(psi) > 0. ) {
+float init_sigma(float cos_psi) {
+  if (cos_psi > 0. ) {
     return -1.;}
-  else if (cos(psi) < 0. ) {
+  else if (cos_psi < 0. ) {
     return 1.;}
   else {
     return 0.;}
@@ -456,7 +456,7 @@ SC_Null_Geodesic make_SC_Null_Geodesic(
   vec_polar3 emission_dir_pol = convert_vec_c2p(emission_dir);
   vec_polar3 bh_dir_pol = vec_polar3(cam_pos_pol, -1., 0., 0.);
   float cos_psi = cos_angle_between(emission_dir_pol, bh_dir_pol, metric);
-  float psi = acos(cos_psi);
+  float sin_psi = sqrt(1. - cos_psi*cos_psi);
 
   // compute the rotation matrix
   mat3 R = rotation_matrix(cam_pos, emission_dir);
@@ -471,16 +471,15 @@ SC_Null_Geodesic make_SC_Null_Geodesic(
   // if the photon is angled to the left, then phi should rotate the opposite direction
   //  and we should do the entire thing but mirrored
   bool left = false;
-  if (sin(psi) < 0.) {
-    psi = 2.*PI - psi; // adding 2pi just keeps it positive
+  if (sin_psi < 0.) {
     left = true;
   }
 
   float r0 = start_pos.r;
   float phi0 = start_pos.phi;
 
-  float b = init_b(start_pos.r, psi, metric);
-  float sigma = init_sigma(psi);
+  float b = init_b(start_pos.r, sin_psi, metric);
+  float sigma = init_sigma(cos_psi);
 
   // compute du0 := initial derivative of u wrt phi
   float u0 = 1. / r0;
