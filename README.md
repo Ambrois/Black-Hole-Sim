@@ -2,8 +2,7 @@
 
 ### Progress Screenshots
 
-![Most Recent Screenshot](/screenshots/screenshot.jpg?raw=true "screenshot1")
-
+![Most Recent Screenshot](screenshots/Screenshot%20from%202025-11-22%2023-17-13.png?raw=true "screenshot1")
 
 TODO:
 - the center of the bh has trouble rendering bc parameterizing with phi, make step size also adjust for phi
