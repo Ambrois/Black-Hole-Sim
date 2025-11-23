@@ -1,6 +1,8 @@
 // To Dos
-// TODO Optimizations
-//  - use cos_psi directly instead of psi
+// TODO Debugging
+//  - fix the butt shape
+//    - it could come from numerical problems in the step function
+//    - it could do with numerical problems in the rotation
 //
 // TODO Features
 //  - have local stepping params be passed in from cpu
@@ -29,6 +31,9 @@ uniform vec3 max_bounds;
 // ray marching
 uniform float h;
 uniform int max_steps;
+// starfield
+uniform sampler2D starfield;
+uniform float star_exposure;
 
 
 // ---------------------- Misc Math
@@ -38,6 +43,14 @@ const float EPS = 1e-9;
 bool angles_almost_equal(float a1, float a2) {
   float diff = mod(a1 - a2, 2.*PI);
   return min(diff, 2.*PI - diff) < EPS;
+}
+
+// map a direction vector to equirectangular UVs
+vec2 dir_to_uv(vec3 dir) {
+  vec3 n = normalize(dir);
+  float phi = atan(n.y, n.x);               // [-pi, pi]
+  float theta = acos(clamp(n.z, -1.0, 1.0)); // [0, pi]
+  return vec2(phi / (2.0 * PI) + 0.5, theta / PI);
 }
 
 // computes if a line segment intersects a parallelogram,
@@ -594,23 +607,6 @@ void check_bh(point_cart3 point, inout float passthrough, inout vec3 color) {
   }
 }
 
-void check_world_limits(point_cart3 point, inout float passthrough, inout vec3 color) {
-  if (passthrough <= 0.) return;
-  float opacity = 1.;
-
-  bool above_min = point.x>=min_bounds.x &&
-                   point.y>=min_bounds.y &&
-                   point.z>=min_bounds.z;
-  bool below_max = point.x<=max_bounds.x &&
-                   point.y<=max_bounds.y &&
-                   point.z<=max_bounds.z;
-  if (!above_min || !below_max) {
-    // Debugging
-    // color = min( color + vec3(0.5), vec3(1.) );
-    color = min( color + vec3(0.05), vec3(1.) );
-    passthrough = clamp(passthrough-opacity, 0., 1.);
-  }
-}
 
 
 void check_test_cube(
@@ -686,6 +682,17 @@ void check_grid(point_cart3 p, inout float passthrough, inout vec3 color) {
 }
 
 
+// This one is special, and just returns true or false depending on whether or not it's out of bounds.
+bool check_world_limits(point_cart3 point) {
+  bool above_min = point.x>=min_bounds.x &&
+                   point.y>=min_bounds.y &&
+                   point.z>=min_bounds.z;
+  bool below_max = point.x<=max_bounds.x &&
+                   point.y<=max_bounds.y &&
+                   point.z<=max_bounds.z;
+  return !above_min || !below_max;
+}
+
 
 // -------- END Object Check Funcs -------------------------------- //
 
@@ -713,6 +720,7 @@ void main() {
   vec_cart3 height_adjustment = scalar_mult( -((2.*pixel.y+1.)/2.) * pixel_height,  h_vec );
 
   vec_cart3 emission_dir = add_vec(add_vec( bot_left_dir, width_adjustment ), height_adjustment);
+  vec3 emission_dir_v3 = normalize(vec3(emission_dir.x_dot, emission_dir.y_dot, emission_dir.z_dot));
   // ----- END Compute Emission Direction
 
 
@@ -729,9 +737,11 @@ void main() {
   // --------- Init marching values
   vec3 color = vec3(0.);  // cummulative color of the ray
   float passthrough = 1.; // how much light in the ray is left
+  bool hit_background = false; // true when we exit world bounds
 
   // current ray position, udpated with steps and used to check bounds
   point_cart3 ray_pos = cam_pos, last_ray_pos = ray_pos;
+  vec3 exit_dir_v3; // content-wise a vec_cart3 at p = latest ray_pos
   // ------ END Init marching values
 
   // check that camera is not inside event horizon
@@ -744,7 +754,7 @@ void main() {
 
       // Check Object Bounds
       //   if it returns true and breaks, that means opaque
-      check_world_limits(ray_pos, passthrough, color);
+      if (check_world_limits(ray_pos)) { hit_background = true; break; }
       check_bh(ray_pos, passthrough, color);
       check_test_cube(ray_pos, last_ray_pos, passthrough, color);
       check_grid(ray_pos, passthrough, color);
@@ -754,8 +764,24 @@ void main() {
       last_ray_pos = ray_pos;
       ray_pos = step_ray(ray);
 
+      // exit dir
+
+      exit_dir_v3 = vec3( 
+        ray_pos.x - last_ray_pos.x,
+        ray_pos.y - last_ray_pos.y,
+        ray_pos.z - last_ray_pos.z
+        );
+
     } // ------ END Ray March Loop -------------------------------- //
 
+  }
+
+  // sample starfield in remaining light
+  if ((passthrough > 0.0 || hit_background) && star_exposure > 0.0) {
+    vec2 uv = dir_to_uv(exit_dir_v3);
+    vec3 star = texture2D(starfield, uv).rgb * star_exposure;
+    float weight = hit_background ? 1.0 : passthrough;
+    color = clamp(color + weight * star, 0.0, 1.0);
   }
 
   // set final pixel color

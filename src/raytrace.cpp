@@ -10,9 +10,7 @@
 #include <cassert>
 
 // TODO needed features
-//  - put this shit on github!!!
 //  - parallel transport camera vectors during camera movement to remove weird shifting
-//  - display a picture of the stars in the background
 //  - fix one of the camera FOVs given pixel ratio
 //  - looking straight up or down fucks the angle, stop from looking up/down too much
 
@@ -104,6 +102,7 @@ vec_cart3 convert_vec_p2c(const vec_polar3 &v) {
 
   return {point, x,y,z};
 }
+
 
 vec_polar3 convert_vec_c2p(const vec_cart3 &v) {
   point_polar3 point = convert_point_c2p(v.p);
@@ -430,8 +429,10 @@ int main() {
   SC_Metric metric{10.};
   Accretion_Disk disk{30, 80};
 
-  Camera cam{0., 300., 20., W,H, metric};
+  Camera cam{0., -300., 20., W,H, metric};
   
+  // starfield params
+  float star_exposure = 1.0f;
 
 
   // ---- END Parameters --------------------------------- //
@@ -447,6 +448,17 @@ int main() {
   if (!sf::Shader::isAvailable()) {std::cerr << "Your shit ass hardware can't support shaders\n"; return 1;}
   sf::Shader shader;
   shader.loadFromFile("raytrace.frag", sf::Shader::Fragment);
+
+  // load starfield texture
+  sf::Texture starfield_tex;
+  if (!starfield_tex.loadFromFile("starfield.png")) {
+    std::cerr << "Failed to load starfield texture (src/starfield.png); disabling starfield.\n";
+    star_exposure = 0.f;
+  } else {
+    starfield_tex.setRepeated(true);
+    starfield_tex.setSmooth(true);
+    shader.setUniform("starfield", starfield_tex);
+  }
 
   // make state object to put shader into to apply in draw
   sf::RenderStates states;
@@ -472,6 +484,8 @@ int main() {
   // ray marching
   shader.setUniform("h", static_cast<float>(h));
   shader.setUniform("max_steps", static_cast<int>(max_steps));
+  // starfield
+  shader.setUniform("star_exposure", star_exposure);
 
 
   
