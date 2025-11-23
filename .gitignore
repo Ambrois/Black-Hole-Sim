@@ -1,0 +1,38 @@
+# Build outputs
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+*.cmake
+
+# Compiled objects
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+
+# Executables and debug
+*.exe
+*.out
+*.pdb
+*.ilk
+
+# Logs and temp
+*.log
+*.tmp
+*.swp
+*~
+
+# IDE/editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Profiling
+*.data*
