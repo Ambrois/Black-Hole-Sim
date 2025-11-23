@@ -2,7 +2,18 @@
 
 ### Progress Screenshots
 
-![Most Recent Screenshot](screenshots/Screenshot%20from%202025-11-22%2023-17-13.png?raw=true "screenshot1")
+![Most Recent Screenshot](screenshots/Screenshot%20from%202025-11-22%2023-17-13.png?raw=true "screenshot")
+
+![Older Screenshot](screenshots/Screenshot%20from%202025-11-17%2017-32-40.png?raw=true "screenshot")
+
+![Older Screenshot](screenshots/Screenshot%20from%202025-11-15%2015-33-02.png?raw=true "screenshot")
+
+Figuring out geodesic equations
+![Older Screenshot](screenshots/Screenshot%20from%202025-11-04%2018-38-16.png?raw=true "screenshot")
+
+Building euclidean engine first
+![Older Screenshot](screenshots/Screenshot%20from%202025-10-21%2019-07-02.png?raw=true "screenshot")
+
 
 TODO:
 - the center of the bh has trouble rendering bc parameterizing with phi, make step size also adjust for phi
