@@ -4,7 +4,7 @@ Detailed explanation writeup WIP.
 - The simulation marches a grid of light rays (one per pixel) from the camera and numerically approximates the null geodesic equations for the Schwarzschild metric. The light rays curve and hit objects, which determine the color of the pixel.
 - For speed of computation, and possible because of spherical symmetry, null geodesics are computed on the equator and rotated into place
 
-### Progress Screenshots
+### Milestone Screenshots
 
 - Added background stars
 - Made disk color more realistic: calculate temp -> approximate black body radiation -> color
@@ -13,7 +13,7 @@ Detailed explanation writeup WIP.
 - Object bounds rendering
 ![Older Screenshot](screenshots/Screenshot%20from%202025-11-17%2017-32-40.png?raw=true "screenshot")
 
-- Got light to curve right in 3D
+- Got light to curve almost right in 3D
 ![Older Screenshot](screenshots/Screenshot%20from%202025-11-15%2015-33-02.png?raw=true "screenshot")
 
 - Figured out null geodesic equations
