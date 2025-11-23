@@ -450,7 +450,7 @@ int main() {
   double h = 0.004;
   int max_steps = 3000;
 
-  double black_hole_mass = 5.;
+  double black_hole_mass = 10.;
   SC_Metric metric{black_hole_mass};
   // inner disk radius at ISCO: innermost stable circular orbit (6M)
   double outer_disk_radius_scalar = 50.; // magic number that looks right
