@@ -6,11 +6,13 @@
 - Made disk color more realistic: calculate temp -> approximate black body radiation -> color
 ![Most Recent Screenshot](screenshots/Screenshot%20from%202025-11-22%2023-17-13.png?raw=true "screenshot")
 
+- Improved object detection
 ![Older Screenshot](screenshots/Screenshot%20from%202025-11-17%2017-32-40.png?raw=true "screenshot")
 
+- Finally got light to curve right in 3D
 ![Older Screenshot](screenshots/Screenshot%20from%202025-11-15%2015-33-02.png?raw=true "screenshot")
 
-Figuring out geodesic equations
+Figuring out null geodesic equations
 ![Older Screenshot](screenshots/Screenshot%20from%202025-11-04%2018-38-16.png?raw=true "screenshot")
 
 Building euclidean engine first
