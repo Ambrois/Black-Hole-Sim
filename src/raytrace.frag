@@ -25,6 +25,9 @@ uniform float pixel_height;
 uniform float M;
 uniform float disk_inner_radius;
 uniform float disk_outer_radius;
+uniform float disk_temp_inner;
+uniform float disk_temp_exponent;
+uniform float disk_emissivity_exponent;
 // world bounds
 uniform vec3 min_bounds;
 uniform vec3 max_bounds;
@@ -54,6 +57,44 @@ vec2 dir_to_uv(vec3 dir) {
   return vec2(phi / (2.0 * PI) + 0.5, theta / PI);
 }
 
+// approximate Planckian color for a given temperature (Kelvin).
+// via CHATGPT, maps 1000K-40000K to RGB in [0,1].
+vec3 blackbody_rgb(float temperature) {
+  float t = clamp(temperature, 1000.0, 40000.0) / 100.0;
+  float r, g, b;
+
+  // Red channel
+  if (t <= 66.0) {
+    r = 1.0;
+  } else {
+    r = 1.292936186062745 * pow(t - 60.0, -0.1332047592);
+  }
+
+  // Green channel
+  if (t <= 66.0) {
+    g = 0.3900815787690196 * log(t) - 0.6318414437886275;
+  } else {
+    g = 1.129890860895294 * pow(t - 60.0, -0.0755148492);
+  }
+
+  // Blue channel
+  if (t >= 66.0) {
+    b = 1.0;
+  } else if (t <= 19.0) {
+    b = 0.0;
+  } else {
+    b = 0.5432067891101961 * log(t - 10.0) - 1.19625408914;
+  }
+
+  return clamp(vec3(r, g, b), vec3(0.0), vec3(1.0));
+}
+
+// thin-disk temperature profile: T(r) = T_in * (r_in / r)^(3/4)
+float disk_temperature(float r) {
+  float rin = max(disk_inner_radius, 1e-4);
+  return disk_temp_inner * pow(rin / max(r, rin), disk_temp_exponent);
+}
+
 // computes if a line segment intersects a parallelogram,
 //  - given 3 corners of a parallelogram
 //  - also returns 0 if the line or parallelogram is degenerate,
@@ -80,15 +121,15 @@ bool line_crosses_parallelogram(
   // check if the line is degenerate
   if (abs(d.x)<EPS && abs(d.y)<EPS && (d.z)<EPS) return false;
 
-  // Let P be the point of intersection. P = a + u*e1 + v*e2
+  // let P be the point of intersection. P = a + u*e1 + v*e2
   // we will compute u and v
 
-  // Assuming A (defined later) is invertible,
-  // We're solving Ax=s where:
+  // assuming A (defined later) is invertible,
+  // we're solving Ax=s where:
   //  -  matrix A = (-d e1 e2)
   //  -  x = (t u v)^t
   //  -  s = r0 - a
-  // Using cramer's rule
+  // using cramer's rule
   //  x_i = det(A_i) / det(A), where
   //    A_i is A but replace i'th col with b
 
@@ -370,6 +411,29 @@ mat3 rotation_matrix(point_cart3 cam, vec_cart3 dir) {
 // ---------- END Rotation Matrix --------------------------------- //
 
 
+// ---------------------- Geometry Helpers ----------------------- //
+
+// Compute intersection of segment p0->p1 with disk in plane z=0 and radius bounds.
+// Returns true and sets hit_point if the segment crosses the disk.
+bool segment_hits_disk(point_cart3 p0, point_cart3 p1, out point_cart3 hit_point) {
+  float dz = p1.z - p0.z;
+  if (abs(dz) < EPS) return false; // segment parallel to plane
+  float t = -p0.z / dz; // param where z=0
+  if (t < 0.0 || t > 1.0) return false; // intersection not within segment
+
+  hit_point = point_cart3(
+      p0.x + (p1.x - p0.x) * t,
+      p0.y + (p1.y - p0.y) * t,
+      0.0);
+
+  float r2 = hit_point.x*hit_point.x + hit_point.y*hit_point.y;
+  float inner2 = disk_inner_radius * disk_inner_radius;
+  float outer2 = disk_outer_radius * disk_outer_radius;
+  return r2 >= inner2 && r2 <= outer2;
+}
+
+// -------- END Geometry Helpers --------------------------------- //
+
 // ------------------------ Geodesic and Diff Eqs --------------------- // 
 
 // -------------------- Structs
@@ -570,7 +634,7 @@ point_cart3 step_ray(inout SC_Null_Geodesic ray) {
 // ---------------------- Object Check Functions ----------------------- //
 
 
-void check_bh(point_cart3 point, inout float passthrough, inout vec3 color) {
+void check_bh(point_cart3 point, point_cart3 last_point, inout float passthrough, inout vec3 color) {
   // check if in event horizon
   if (passthrough <= 0.) return;
 
@@ -582,28 +646,23 @@ void check_bh(point_cart3 point, inout float passthrough, inout vec3 color) {
     passthrough = 0.;
   }
 
-  // check if in disk
-  bool in_radius = dist >= disk_inner_radius && dist <= disk_outer_radius;
-  bool in_height = point.z >= (-0.3) && point.z <= (0.3);
-  bool in_disk = in_radius && in_height;
-  if (in_disk) {
-    // Compute and set Color
-    // test: random coloring function, not physics based, that's for later
-    float x = dist;
-    float a = disk_inner_radius;
-    float b = disk_outer_radius;
-    float c_r = 1.;
-    float c_w = 25.;
-    float red = ( 1./(x-c_r) - 1./(b-c_r) )/( 1./(a-c_r) - 1./(b-c_r) );
-    float white = (1./(x-c_w) - 1./(b-c_w) )/( 1./(a-c_w) - 1./(b-c_w) );  
-    color = min(color+vec3(red, white, white), vec3(1.) );
+  // thin disk: detect crossing of z=0 plane within radius bounds
+  point_cart3 hit_point;
+  bool crosses_disk = segment_hits_disk(last_point, point, hit_point);
 
-    // Compute Opacity and set Passthrough
-    //  want some function that goes from 1 to 0, w/ r between inner and outer radius
-    //  it would make sense for opacity to be proportional to how white it is right?
-    float opacity = white;
+  if (crosses_disk) {
+    // Disk emissivity and color (simple thin-disk model)
+    float r_hit = sqrt(hit_point.x*hit_point.x + hit_point.y*hit_point.y);
+    float temp = disk_temperature(r_hit);
+    vec3 bb = blackbody_rgb(temp);
 
-    passthrough = clamp(passthrough - opacity, 0., 1.);
+    // Emissivity falls off ~r^-q (standard thin-disk scaling), q≈3
+    float emissivity = pow(disk_inner_radius / max(r_hit, disk_inner_radius), disk_emissivity_exponent);
+
+    // Apply color and attenuate passthrough by emissivity (clamped to [0,1])
+    float opacity = clamp(emissivity, 0.0, 1.0);
+    color = clamp(color + emissivity * bb, vec3(0.0), vec3(1.0));
+    passthrough = clamp(passthrough - opacity, 0.0, 1.0);
   }
 }
 
@@ -755,7 +814,7 @@ void main() {
       // Check Object Bounds
       //   if it returns true and breaks, that means opaque
       if (check_world_limits(ray_pos)) { hit_background = true; break; }
-      check_bh(ray_pos, passthrough, color);
+      check_bh(ray_pos, last_ray_pos, passthrough, color);
       check_test_cube(ray_pos, last_ray_pos, passthrough, color);
       check_grid(ray_pos, passthrough, color);
 

@@ -262,7 +262,29 @@ struct SC_Metric{
 // -------------- Define Camera, Objects ------------------ //
 
 struct Accretion_Disk {
-  double inner_radius, outer_radius; 
+  double inner_radius;
+  double outer_radius;
+  double temp_inner;          // Kelvin at inner edge
+  double temp_exponent;       // temperature falloff exponent (thin disk ~0.75)
+  double emissivity_exponent; // emissivity falloff exponent (thin disk ~3)
+
+  static Accretion_Disk from_metric(const SC_Metric& metric, double outer_radius_factor, double temp_inner_k) {
+    double isco_radius = 6. * metric.M;
+    return Accretion_Disk{
+        isco_radius,
+        outer_radius_factor * metric.M,
+        temp_inner_k,
+        0.75,
+        3.0};
+  }
+
+  void set_uniforms(sf::Shader& shader) const {
+    shader.setUniform("disk_inner_radius", static_cast<float>(inner_radius));
+    shader.setUniform("disk_outer_radius", static_cast<float>(outer_radius));
+    shader.setUniform("disk_temp_inner", static_cast<float>(temp_inner));
+    shader.setUniform("disk_temp_exponent", static_cast<float>(temp_exponent));
+    shader.setUniform("disk_emissivity_exponent", static_cast<float>(emissivity_exponent));
+  }
 };
 
 
@@ -425,15 +447,18 @@ int main() {
   double h = 0.004;
   int max_steps = 3000;
 
-
-  SC_Metric metric{10.};
-  // Schwarzschild thin disk: inner at ISCO (6M), outer modest extent
-  Accretion_Disk disk{6.0 * metric.M, 300.0};
+  double black_hole_mass = 5.;
+  SC_Metric metric{black_hole_mass};
+  // Schwarzschild thin disk: inner at ISCO (6M)
+  double outer_disk_radius_scalar = 30.;
+  Accretion_Disk disk = Accretion_Disk::from_metric(metric, outer_disk_radius_scalar, 12000.);
 
   Camera cam{0., -300., 20., W,H, metric};
   
   // starfield params
   double star_exposure = 1.;
+  // disk temperature at inner edge (Kelvin)
+  double disk_temp_inner = 12000.;
 
 
   // ---- END Parameters --------------------------------- //
@@ -477,8 +502,7 @@ int main() {
   // Set shader uniforms that don't change during game loop
   shader.setUniform("M", static_cast<float>(metric.M));
   // disk
-  shader.setUniform("disk_inner_radius", static_cast<float>(disk.inner_radius));
-  shader.setUniform("disk_outer_radius", static_cast<float>(disk.outer_radius));
+  disk.set_uniforms(shader);
   // world bounds
   shader.setUniform("min_bounds", sf::Glsl::Vec3(MINX, MINY, MINZ));
   shader.setUniform("max_bounds", sf::Glsl::Vec3(MAXX, MAXY, MAXZ));
@@ -487,6 +511,8 @@ int main() {
   shader.setUniform("max_steps", static_cast<int>(max_steps));
   // starfield
   shader.setUniform("star_exposure", static_cast<float>(star_exposure));
+  // disk temp
+  shader.setUniform("disk_temp_inner", static_cast<float>(disk_temp_inner));
 
 
   
