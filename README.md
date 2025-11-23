@@ -1,4 +1,4 @@
-# From Scratch Black Hole Visualization
+# Black Hole Visualization From Scratch
 
 ### Progress Screenshots
 
@@ -6,17 +6,20 @@
 - Made disk color more realistic: calculate temp -> approximate black body radiation -> color
 ![Most Recent Screenshot](screenshots/Screenshot%20from%202025-11-22%2023-17-13.png?raw=true "screenshot")
 
-- Improved object bounds rendering
+- Object bounds rendering
 ![Older Screenshot](screenshots/Screenshot%20from%202025-11-17%2017-32-40.png?raw=true "screenshot")
 
-- Finally got light to curve right in 3D
+- Got light to curve right in 3D
 ![Older Screenshot](screenshots/Screenshot%20from%202025-11-15%2015-33-02.png?raw=true "screenshot")
 
-Figuring out null geodesic equations
+- Figured out null geodesic equations
 ![Older Screenshot](screenshots/Screenshot%20from%202025-11-04%2018-38-16.png?raw=true "screenshot")
 
-Building euclidean engine first
+- Built euclidean engine first
 ![Older Screenshot](screenshots/Screenshot%20from%202025-10-21%2019-07-02.png?raw=true "screenshot")
+
+- Drew a circle
+![Older Screenshot](screenshots/Screenshot%20from%202025-10-18%2022-30-28.png?raw=true "screenshot")
 
 
 TODO:
@@ -25,8 +28,4 @@ TODO:
 - accretion disk
   - should be flared out bc intertia
   - needs to use intersections fully, the ray skipped segments are noticable
- 
-Lessons learned:
-- I didn't know about compute shaders so I made the computation happen in a fragment shader, which could be more efficient
-- For confusing math, use lots of structs to maintain crystal clear mathematical clarity, as long as performance is good enough
-- 
+
