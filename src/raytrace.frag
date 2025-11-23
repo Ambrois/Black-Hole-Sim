@@ -21,8 +21,9 @@ uniform vec3 w_vec_IN;
 uniform vec3 bot_left_dir_IN;
 uniform float pixel_width;
 uniform float pixel_height;
-// bh stuff
+// metric
 uniform float M;
+// disk
 uniform float disk_inner_radius;
 uniform float disk_outer_radius;
 uniform float disk_temp_inner;
@@ -34,7 +35,7 @@ uniform vec3 max_bounds;
 // ray marching
 uniform float h;
 uniform int max_steps;
-// starfield
+// background stars
 uniform sampler2D starfield;
 uniform float star_exposure;
 
@@ -57,43 +58,6 @@ vec2 dir_to_uv(vec3 dir) {
   return vec2(phi / (2.0 * PI) + 0.5, theta / PI);
 }
 
-// approximate Planckian color for a given temperature (Kelvin).
-// via CHATGPT, maps 1000K-40000K to RGB in [0,1].
-vec3 blackbody_rgb(float temperature) {
-  float t = clamp(temperature, 1000.0, 40000.0) / 100.0;
-  float r, g, b;
-
-  // Red channel
-  if (t <= 66.0) {
-    r = 1.0;
-  } else {
-    r = 1.292936186062745 * pow(t - 60.0, -0.1332047592);
-  }
-
-  // Green channel
-  if (t <= 66.0) {
-    g = 0.3900815787690196 * log(t) - 0.6318414437886275;
-  } else {
-    g = 1.129890860895294 * pow(t - 60.0, -0.0755148492);
-  }
-
-  // Blue channel
-  if (t >= 66.0) {
-    b = 1.0;
-  } else if (t <= 19.0) {
-    b = 0.0;
-  } else {
-    b = 0.5432067891101961 * log(t - 10.0) - 1.19625408914;
-  }
-
-  return clamp(vec3(r, g, b), vec3(0.0), vec3(1.0));
-}
-
-// thin-disk temperature profile: T(r) = T_in * (r_in / r)^(3/4)
-float disk_temperature(float r) {
-  float rin = max(disk_inner_radius, 1e-4);
-  return disk_temp_inner * pow(rin / max(r, rin), disk_temp_exponent);
-}
 
 // computes if a line segment intersects a parallelogram,
 //  - given 3 corners of a parallelogram
@@ -163,6 +127,50 @@ bool line_crosses_parallelogram(
 }
 
 // -------- END Misc Math
+// ------------------------- Misc Physics 
+
+// approximate Planckian color for a given temperature (Kelvin).
+// via CHATGPT, maps 1000K-40000K to RGB in [0,1].
+vec3 blackbody_rgb(float temperature) {
+  float t = clamp(temperature, 1000.0, 40000.0) / 100.0;
+  float r, g, b;
+
+  // Red channel
+  if (t <= 66.0) {
+    r = 1.0;
+  } else {
+    r = 1.292936186062745 * pow(t - 60.0, -0.1332047592);
+  }
+
+  // Green channel
+  if (t <= 66.0) {
+    g = 0.3900815787690196 * log(t) - 0.6318414437886275;
+  } else {
+    g = 1.129890860895294 * pow(t - 60.0, -0.0755148492);
+  }
+
+  // Blue channel
+  if (t >= 66.0) {
+    b = 1.0;
+  } else if (t <= 19.0) {
+    b = 0.0;
+  } else {
+    b = 0.5432067891101961 * log(t - 10.0) - 1.19625408914;
+  }
+
+  return clamp(vec3(r, g, b), vec3(0.0), vec3(1.0));
+}
+
+// thin-disk temperature profile: T(r) = T_in * (r_in / r)^(3/4)
+float disk_temperature(float r) {
+  float rin = max(disk_inner_radius, 1e-4);
+  return disk_temp_inner * pow(rin / max(r, rin), disk_temp_exponent);
+}
+
+// ----------- END Misc Physics
+
+
+
 
 
 // --------------------------- Coordinates ------------------------------- //
@@ -411,28 +419,6 @@ mat3 rotation_matrix(point_cart3 cam, vec_cart3 dir) {
 // ---------- END Rotation Matrix --------------------------------- //
 
 
-// ---------------------- Geometry Helpers ----------------------- //
-
-// Compute intersection of segment p0->p1 with disk in plane z=0 and radius bounds.
-// Returns true and sets hit_point if the segment crosses the disk.
-bool segment_hits_disk(point_cart3 p0, point_cart3 p1, out point_cart3 hit_point) {
-  float dz = p1.z - p0.z;
-  if (abs(dz) < EPS) return false; // segment parallel to plane
-  float t = -p0.z / dz; // param where z=0
-  if (t < 0.0 || t > 1.0) return false; // intersection not within segment
-
-  hit_point = point_cart3(
-      p0.x + (p1.x - p0.x) * t,
-      p0.y + (p1.y - p0.y) * t,
-      0.0);
-
-  float r2 = hit_point.x*hit_point.x + hit_point.y*hit_point.y;
-  float inner2 = disk_inner_radius * disk_inner_radius;
-  float outer2 = disk_outer_radius * disk_outer_radius;
-  return r2 >= inner2 && r2 <= outer2;
-}
-
-// -------- END Geometry Helpers --------------------------------- //
 
 // ------------------------ Geodesic and Diff Eqs --------------------- // 
 
@@ -634,21 +620,37 @@ point_cart3 step_ray(inout SC_Null_Geodesic ray) {
 // ---------------------- Object Check Functions ----------------------- //
 
 
-void check_bh(point_cart3 point, point_cart3 last_point, inout float passthrough, inout vec3 color) {
-  // check if in event horizon
+
+
+void check_bh(point_cart3 point, inout float passthrough, inout vec3 color) {
   if (passthrough <= 0.) return;
 
   float dist = sqrt(point.x*point.x + point.y*point.y + point.z*point.z);
-
   bool in_event_horizon = dist < 3.*M; // 3M is closest stable orbit, anything within die
   if (in_event_horizon) {
     color = min(color+vec3(0.0), vec3(1.0));
     passthrough = 0.;
   }
+}
 
-  // thin disk: detect crossing of z=0 plane within radius bounds
-  point_cart3 hit_point;
-  bool crosses_disk = segment_hits_disk(last_point, point, hit_point);
+void check_disk(point_cart3 point, point_cart3 last_point, inout float passthrough, inout vec3 color) {
+  if (passthrough <= 0.) return;
+
+  // check for crossing of z=0 plane within radius bounds
+  float dz = point.z - last_point.z;
+  if (abs(dz) < EPS) return; // segment parallel to disk plane
+  float t = -last_point.z / dz; // param where z=0
+  if (t < 0.0 || t > 1.0) return; // intersection not within segment
+
+  point_cart3 hit_point = point_cart3(
+      last_point.x + (point.x - last_point.x) * t,
+      last_point.y + (point.y - last_point.y) * t,
+      0.0);
+
+  float r2 = hit_point.x*hit_point.x + hit_point.y*hit_point.y;
+  float inner2 = disk_inner_radius * disk_inner_radius;
+  float outer2 = disk_outer_radius * disk_outer_radius;
+  bool crosses_disk = (r2 >= inner2 && r2 <= outer2);
 
   if (crosses_disk) {
     // Disk emissivity and color (simple thin-disk model)
@@ -665,8 +667,6 @@ void check_bh(point_cart3 point, point_cart3 last_point, inout float passthrough
     passthrough = clamp(passthrough - opacity, 0.0, 1.0);
   }
 }
-
-
 
 void check_test_cube(
     point_cart3 point, point_cart3 last_point,
@@ -814,7 +814,8 @@ void main() {
       // Check Object Bounds
       //   if it returns true and breaks, that means opaque
       if (check_world_limits(ray_pos)) { hit_background = true; break; }
-      check_bh(ray_pos, last_ray_pos, passthrough, color);
+      check_bh(ray_pos, passthrough, color);
+      check_disk(ray_pos, last_ray_pos, passthrough, color);
       check_test_cube(ray_pos, last_ray_pos, passthrough, color);
       check_grid(ray_pos, passthrough, color);
 
