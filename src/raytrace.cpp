@@ -265,17 +265,19 @@ struct Accretion_Disk {
   double inner_radius;
   double outer_radius;
   double temp_inner;          // Kelvin at inner edge
-  double temp_exponent;       // temperature falloff exponent (thin disk ~0.75)
-  double emissivity_exponent; // emissivity falloff exponent (thin disk ~3)
+  double temp_exponent;       // temperature falloff exponent (0.75 magic num)
+  double emissivity_exponent; // emissivity falloff exponent (3 magic num)
+  double half_thickness;      // uniform slab half-thickness
 
-  static Accretion_Disk from_metric(const SC_Metric& metric, double outer_radius_factor, double temp_inner_k) {
+  static Accretion_Disk from_metric(const SC_Metric& metric, double outer_radius_factor, double temp_inner_k, double half_thickness) {
     double isco_radius = 6. * metric.M;
     return Accretion_Disk{
         isco_radius,
         outer_radius_factor * metric.M,
         temp_inner_k,
         0.75,
-        3.0};
+        3.0,
+        half_thickness};
   }
 
   void set_uniforms(sf::Shader& shader) const {
@@ -284,6 +286,7 @@ struct Accretion_Disk {
     shader.setUniform("disk_temp_inner", static_cast<float>(temp_inner));
     shader.setUniform("disk_temp_exponent", static_cast<float>(temp_exponent));
     shader.setUniform("disk_emissivity_exponent", static_cast<float>(emissivity_exponent));
+    shader.setUniform("disk_half_thickness", static_cast<float>(half_thickness));
   }
 };
 
@@ -449,16 +452,16 @@ int main() {
 
   double black_hole_mass = 5.;
   SC_Metric metric{black_hole_mass};
-  // Schwarzschild thin disk: inner at ISCO (6M)
-  double outer_disk_radius_scalar = 30.;
-  Accretion_Disk disk = Accretion_Disk::from_metric(metric, outer_disk_radius_scalar, 12000.);
+  // inner disk radius at ISCO: innermost stable circular orbit (6M)
+  double outer_disk_radius_scalar = 50.; // magic number that looks right
+  double disk_temp_inner = 12000.; // Kelvin
+  double disk_half_thickness = 1.5; // uniform disk half-thickness
+  Accretion_Disk disk = Accretion_Disk::from_metric(metric, outer_disk_radius_scalar, disk_temp_inner, disk_half_thickness);
 
   Camera cam{0., -300., 20., W,H, metric};
   
   // starfield params
   double star_exposure = 1.;
-  // disk temperature at inner edge (Kelvin)
-  double disk_temp_inner = 12000.;
 
 
   // ---- END Parameters --------------------------------- //
@@ -511,8 +514,9 @@ int main() {
   shader.setUniform("max_steps", static_cast<int>(max_steps));
   // starfield
   shader.setUniform("star_exposure", static_cast<float>(star_exposure));
-  // disk temp
-  shader.setUniform("disk_temp_inner", static_cast<float>(disk_temp_inner));
+  // disk params
+  shader.setUniform("disk_temp_inner", static_cast<float>(disk.temp_inner));
+  shader.setUniform("disk_half_thickness", static_cast<float>(disk.half_thickness));
 
 
   

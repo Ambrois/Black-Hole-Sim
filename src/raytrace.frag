@@ -5,6 +5,7 @@
 //    - it could do with numerical problems in the rotation
 //
 // TODO Features
+//  - document everything better
 //  - have local stepping params be passed in from cpu
 //  - size disk based on stable innermost orbit, and then some fixed reasonable upper bound scaled w/ mass
 //  - color disk based on temperature
@@ -29,6 +30,7 @@ uniform float disk_outer_radius;
 uniform float disk_temp_inner;
 uniform float disk_temp_exponent;
 uniform float disk_emissivity_exponent;
+uniform float disk_half_thickness;
 // world bounds
 uniform vec3 min_bounds;
 uniform vec3 max_bounds;
@@ -163,8 +165,8 @@ vec3 blackbody_rgb(float temperature) {
 
 // thin-disk temperature profile: T(r) = T_in * (r_in / r)^(3/4)
 float disk_temperature(float r) {
-  float rin = max(disk_inner_radius, 1e-4);
-  return disk_temp_inner * pow(rin / max(r, rin), disk_temp_exponent);
+  float r_in = max(disk_inner_radius, EPS);
+  return disk_temp_inner * pow(r_in / max(r, r_in), disk_temp_exponent);
 }
 
 // ----------- END Misc Physics
@@ -636,7 +638,7 @@ void check_bh(point_cart3 point, inout float passthrough, inout vec3 color) {
 void check_disk(point_cart3 point, point_cart3 last_point, inout float passthrough, inout vec3 color) {
   if (passthrough <= 0.) return;
 
-  // check for crossing of z=0 plane within radius bounds
+  // check for crossing of z=0 plane within radius bounds and thickness
   float dz = point.z - last_point.z;
   if (abs(dz) < EPS) return; // segment parallel to disk plane
   float t = -last_point.z / dz; // param where z=0
@@ -652,20 +654,27 @@ void check_disk(point_cart3 point, point_cart3 last_point, inout float passthrou
   float outer2 = disk_outer_radius * disk_outer_radius;
   bool crosses_disk = (r2 >= inner2 && r2 <= outer2);
 
-  if (crosses_disk) {
-    // Disk emissivity and color (simple thin-disk model)
-    float r_hit = sqrt(hit_point.x*hit_point.x + hit_point.y*hit_point.y);
-    float temp = disk_temperature(r_hit);
-    vec3 bb = blackbody_rgb(temp);
+  // uniform slab thickness check
+  float z0 = last_point.z;
+  float z1 = point.z;
+  float z_min = -disk_half_thickness;
+  float z_max =  disk_half_thickness;
+  bool within_thickness = (min(z0, z1) <= z_max) && (max(z0, z1) >= z_min);
 
-    // Emissivity falls off ~r^-q (standard thin-disk scaling), q≈3
-    float emissivity = pow(disk_inner_radius / max(r_hit, disk_inner_radius), disk_emissivity_exponent);
+  if (!(crosses_disk && within_thickness)) return;
 
-    // Apply color and attenuate passthrough by emissivity (clamped to [0,1])
-    float opacity = clamp(emissivity, 0.0, 1.0);
-    color = clamp(color + emissivity * bb, vec3(0.0), vec3(1.0));
-    passthrough = clamp(passthrough - opacity, 0.0, 1.0);
-  }
+  // disk emissivity and color, thin-disk model
+  float r_hit = sqrt(hit_point.x*hit_point.x + hit_point.y*hit_point.y);
+  float temp = disk_temperature(r_hit);
+  vec3 bb = blackbody_rgb(temp);
+
+  // emissivity falls off by r^-q, q=3
+  float emissivity = pow(disk_inner_radius / max(r_hit, disk_inner_radius), disk_emissivity_exponent);
+
+  // color
+  float opacity = clamp(emissivity, 0.0, 1.0);
+  color = clamp(color + emissivity * bb, vec3(0.0), vec3(1.0));
+  passthrough = clamp(passthrough - opacity, 0.0, 1.0);
 }
 
 void check_test_cube(
