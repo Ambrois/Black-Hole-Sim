@@ -46,6 +46,7 @@ bool angles_almost_equal(float a1, float a2) {
 }
 
 // map a direction vector to equirectangular UVs
+// dir is treated as a vec_cart3
 vec2 dir_to_uv(vec3 dir) {
   vec3 n = normalize(dir);
   float phi = atan(n.y, n.x);               // [-pi, pi]
@@ -57,7 +58,6 @@ vec2 dir_to_uv(vec3 dir) {
 //  - given 3 corners of a parallelogram
 //  - also returns 0 if the line or parallelogram is degenerate,
 //    or the line is parallel w/ plane
-//    - maybe make it error in these cases TODO
 bool line_crosses_parallelogram(
     vec3 line_start, vec3 line_end, 
     vec3 corner1, vec3 corner2, vec3 corner3

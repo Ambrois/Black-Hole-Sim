@@ -427,12 +427,13 @@ int main() {
 
 
   SC_Metric metric{10.};
-  Accretion_Disk disk{30, 80};
+  // Schwarzschild thin disk: inner at ISCO (6M), outer modest extent
+  Accretion_Disk disk{6.0 * metric.M, 300.0};
 
   Camera cam{0., -300., 20., W,H, metric};
   
   // starfield params
-  float star_exposure = 1.0f;
+  double star_exposure = 1.;
 
 
   // ---- END Parameters --------------------------------- //
@@ -453,7 +454,7 @@ int main() {
   sf::Texture starfield_tex;
   if (!starfield_tex.loadFromFile("starfield.png")) {
     std::cerr << "Failed to load starfield texture (src/starfield.png); disabling starfield.\n";
-    star_exposure = 0.f;
+    star_exposure = 0.;
   } else {
     starfield_tex.setRepeated(true);
     starfield_tex.setSmooth(true);
@@ -485,7 +486,7 @@ int main() {
   shader.setUniform("h", static_cast<float>(h));
   shader.setUniform("max_steps", static_cast<int>(max_steps));
   // starfield
-  shader.setUniform("star_exposure", star_exposure);
+  shader.setUniform("star_exposure", static_cast<float>(star_exposure));
 
 
   
