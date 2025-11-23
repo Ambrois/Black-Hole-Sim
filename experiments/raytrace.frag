@@ -370,6 +370,7 @@ struct SC_Null_Geodesic{
   mat3 R; // matrix to convert cart3 to cart3 on the equator
   u_vec current_u;  // mutable
   float current_r;  //
+  float current_phi;//
   bool left; // emission angle to the "left" means sin(psi)<0
 	float h;
 	int max_steps;
@@ -476,6 +477,7 @@ SC_Null_Geodesic make_SC_Null_Geodesic(
   }
 
   float r0 = start_pos.r;
+  float phi0 = start_pos.phi;
 
   float b = init_b(start_pos.r, psi, metric);
   float sigma = init_sigma(psi);
@@ -491,6 +493,7 @@ SC_Null_Geodesic make_SC_Null_Geodesic(
       R, 
       start_u_vec, 
       r0, 
+      phi0,
       left, 
       h, 
       max_steps, 0.);
@@ -527,11 +530,12 @@ point_cart3 step_ray(inout SC_Null_Geodesic ray) {
   
   // update mutables in ray
   ray.current_r = 1. / ray.current_u.u;
+  ray.current_phi += h;
   ray.current_step+=1.;
 
   float
     r = ray.current_r,
-    phi = ray.start_pos.phi + h*ray.current_step;
+    phi = ray.current_phi;
 
   // points in equatorial plane
   point_polar2 current_pos_p2 = point_polar2(r, phi);
