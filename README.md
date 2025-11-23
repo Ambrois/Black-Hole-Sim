@@ -1,8 +1,8 @@
 # From Scratch Black Hole Visualization
 
-### Screenshots
+### Progress Screenshots
 
-![screenshot](/screenshots/screenshot.jpg?raw=true "screenshot1")
+![Most Recent Screenshot](/screenshots/screenshot.jpg?raw=true "screenshot1")
 
 
 TODO:
