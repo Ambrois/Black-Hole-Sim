@@ -1,5 +1,6 @@
 // To Dos
 // TODO Debugging
+//  - make disk look not choppy
 //  - fix the butt shape
 //    - it could come from numerical problems in the step function
 //    - it could do with numerical problems in the rotation
@@ -638,44 +639,48 @@ void check_bh(point_cart3 point, inout float passthrough, inout vec3 color) {
 void check_disk(point_cart3 point, point_cart3 last_point, inout float passthrough, inout vec3 color) {
   if (passthrough <= 0.) return;
 
-  // check for crossing of z=0 plane within radius bounds and thickness
+  // check for intersection with slab of thickness 2*disk_half_thickness centered at z=0
   float dz = point.z - last_point.z;
-  if (abs(dz) < EPS) return; // segment parallel to disk plane
-  float t = -last_point.z / dz; // param where z=0
-  if (t < 0.0 || t > 1.0) return; // intersection not within segment
+  float t_hit = 0.0;
+  if (abs(dz) < EPS) {
+    // segment parallel to disk plane, take midpoint if both points inside slab
+    if (abs(last_point.z) > disk_half_thickness || abs(point.z) > disk_half_thickness) return;
+    t_hit = 0.5;
+  } else {
+    float t0 = (-disk_half_thickness - last_point.z) / dz;
+    float t1 = ( disk_half_thickness - last_point.z) / dz;
+    float t_enter = max(0.0, min(t0, t1));
+    float t_exit  = min(1.0, max(t0, t1));
+    if (t_enter > t_exit) return; // misses the slab
+    t_hit = 0.5 * (t_enter + t_exit); // pick midpoint within slab segment
+  }
 
   point_cart3 hit_point = point_cart3(
-      last_point.x + (point.x - last_point.x) * t,
-      last_point.y + (point.y - last_point.y) * t,
-      0.0);
+      last_point.x + (point.x - last_point.x) * t_hit,
+      last_point.y + (point.y - last_point.y) * t_hit,
+      last_point.z + dz * t_hit);
 
   float r2 = hit_point.x*hit_point.x + hit_point.y*hit_point.y;
   float inner2 = disk_inner_radius * disk_inner_radius;
   float outer2 = disk_outer_radius * disk_outer_radius;
   bool crosses_disk = (r2 >= inner2 && r2 <= outer2);
+  if (!crosses_disk) return;
 
-  // uniform slab thickness check
-  float z0 = last_point.z;
-  float z1 = point.z;
-  float z_min = -disk_half_thickness;
-  float z_max =  disk_half_thickness;
-  bool within_thickness = (min(z0, z1) <= z_max) && (max(z0, z1) >= z_min);
-
-  if (!(crosses_disk && within_thickness)) return;
-
-  // disk emissivity and color, thin-disk model
+  // disk emissivity and color, thin disk model
   float r_hit = sqrt(hit_point.x*hit_point.x + hit_point.y*hit_point.y);
   float temp = disk_temperature(r_hit);
   vec3 bb = blackbody_rgb(temp);
 
-  // emissivity falls off by r^-q, q=3
+  // emissivity falls off by r^-q, w/ q ~= 3
   float emissivity = pow(disk_inner_radius / max(r_hit, disk_inner_radius), disk_emissivity_exponent);
 
   // color
-  float opacity = clamp(emissivity, 0.0, 1.0);
+  float opacity = clamp(0.7*emissivity, 0.0, 1.0);
+  //float opacity = 0.;
   color = clamp(color + emissivity * bb, vec3(0.0), vec3(1.0));
   passthrough = clamp(passthrough - opacity, 0.0, 1.0);
 }
+
 
 void check_test_cube(
     point_cart3 point, point_cart3 last_point,

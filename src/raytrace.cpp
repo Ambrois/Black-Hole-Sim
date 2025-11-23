@@ -454,8 +454,8 @@ int main() {
   SC_Metric metric{black_hole_mass};
   // inner disk radius at ISCO: innermost stable circular orbit (6M)
   double outer_disk_radius_scalar = 50.; // magic number that looks right
-  double disk_temp_inner = 12000.; // Kelvin
-  double disk_half_thickness = 1.5; // uniform disk half-thickness
+  double disk_temp_inner = 5000; // Kelvin, made up temperature
+  double disk_half_thickness = 1.; // uniform disk half-thickness
   Accretion_Disk disk = Accretion_Disk::from_metric(metric, outer_disk_radius_scalar, disk_temp_inner, disk_half_thickness);
 
   Camera cam{0., -300., 20., W,H, metric};
