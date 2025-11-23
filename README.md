@@ -1,6 +1,7 @@
 # Black Hole Visualization From Scratch
 
-Detailed explanation writeup WIP.
+More detailed writeup WIP.
+- Using C++, SFML, and GLSL
 - The simulation marches a grid of light rays (one per pixel) from the camera and numerically approximates the null geodesic equations for the Schwarzschild metric. The light rays curve and hit objects, which determine the color of the pixel.
 - For speed of computation, and possible because of spherical symmetry, null geodesics are computed on the equator and rotated into place
 
