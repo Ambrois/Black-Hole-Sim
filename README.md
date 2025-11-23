@@ -10,6 +10,7 @@ More detailed writeup WIP.
 
 - Added background stars
 - Made disk color more realistic: calculate temp -> approximate black body radiation -> color
+- Photon ring visible
 ![Most Recent Screenshot](screenshots/Screenshot%20from%202025-11-22%2023-17-13.png?raw=true "screenshot")
 
 - Object bounds rendering
