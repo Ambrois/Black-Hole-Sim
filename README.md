@@ -13,7 +13,7 @@ Detailed explanation writeup WIP.
 - Object bounds rendering
 ![Older Screenshot](screenshots/Screenshot%20from%202025-11-17%2017-32-40.png?raw=true "screenshot")
 
-- Got light to curve almost right in 3D
+- Got light to curve coherently in 3D
 ![Older Screenshot](screenshots/Screenshot%20from%202025-11-15%2015-33-02.png?raw=true "screenshot")
 
 - Figured out null geodesic equations
