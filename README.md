@@ -2,6 +2,8 @@
 
 ### Progress Screenshots
 
+- Added background stars
+- Made disk color more realistic: calculate temp -> approximate black body radiation -> color
 ![Most Recent Screenshot](screenshots/Screenshot%20from%202025-11-22%2023-17-13.png?raw=true "screenshot")
 
 ![Older Screenshot](screenshots/Screenshot%20from%202025-11-17%2017-32-40.png?raw=true "screenshot")
