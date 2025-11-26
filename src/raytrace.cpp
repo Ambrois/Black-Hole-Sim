@@ -308,8 +308,8 @@ class Camera {
       h_vec; // thumb
                                 
     double d{1.};                // distance to frame
-    double FOV_h{1.}; 
-    double FOV_w{1.};
+    double FOV_h{1.3}; 
+    double FOV_w{1.3};
     double wasd_sensitivity{3.};
     double turn_sensitivity{0.001};
     const double TWO_PI = PI * 2.0;
