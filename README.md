@@ -2,7 +2,7 @@
 
 More detailed and accessible writeup WIP.
 - Using C++, SFML, and GLSL
-  - my first C++ and graphics project so please forgive strange and bad design choices
+  - my first C++ and graphics project so please forgive strange design choices
 - The simulation marches a grid of light rays (one per pixel) from the camera and numerically approximates the null geodesic equations for the Schwarzschild metric. The light rays curve and hit objects, which determine the color of the pixel.
   - numerical approximation is done via RK4 with adaptive step size
 - For efficiency of computation, and accurate due to spherical symmetry of the SC spacetime, null geodesics are computed in 2D on the equator and rotated into place in 3D.
