@@ -30,10 +30,43 @@ More detailed and accessible writeup WIP.
 ![Older Screenshot](screenshots/Screenshot%20from%202025-10-18%2022-30-28.png?raw=true "screenshot")
 
 
+## Build & Run
+
+### Dependencies
+- C++17 compiler (e.g. `g++` or `clang++`)
+- CMake >= 3.16
+- SFML 2.5+ (graphics, window, system components)
+
+On Ubuntu/Debian, for example:
+
+```bash
+sudo apt install g++ cmake libsfml-dev
+```
+
+### Configure & build
+
+```bash
+git clone https://github.com/Ambrois/Black-Hole-Sim.git blackholesim
+cd blackholesim
+mkdir -p build
+cd build
+cmake ..
+cmake --build .
+```
+
+### Run
+
+From the repo root (so shader and assets paths work):
+
+```bash
+cd ..
+./build/blackhole
+```
+
+
 TODO:
 - the center of the bh has trouble rendering bc parameterizing with phi, make step size also adjust for phi
 - if you move, your camera turns because I've yet to implement parallel transport of the camera directions
 - accretion disk
   - should be flared out bc intertia
   - needs to use intersections fully, the ray skipped segments are noticable
-
