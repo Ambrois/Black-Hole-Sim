@@ -477,8 +477,8 @@ int main() {
   // make shader and load frag code
   if (!sf::Shader::isAvailable()) {std::cerr << "Your shit ass hardware can't support shaders\n"; return 1;}
   sf::Shader shader;
-  if (!shader.loadFromFile("src/raytrace.frag", sf::Shader::Fragment)) {
-    std::cerr << "Failed to load shader file src/raytrace.frag\n";
+  if (!shader.loadFromFile("src/blackhole.frag", sf::Shader::Fragment)) {
+    std::cerr << "Failed to load shader file src/blackhole.frag\n";
     return 1;
   }
 
