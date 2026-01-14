@@ -1,5 +1,6 @@
 // compile with:
-//    g++ -O3 raytrace2.cpp -lsfml-graphics -lsfml-window -lsfml-system -o shader
+//  cd build
+//  cmake --build .
 
 #include <SFML/Graphics.hpp>
 #include <cmath>
@@ -476,12 +477,15 @@ int main() {
   // make shader and load frag code
   if (!sf::Shader::isAvailable()) {std::cerr << "Your shit ass hardware can't support shaders\n"; return 1;}
   sf::Shader shader;
-  shader.loadFromFile("raytrace.frag", sf::Shader::Fragment);
+  if (!shader.loadFromFile("src/raytrace.frag", sf::Shader::Fragment)) {
+    std::cerr << "Failed to load shader file src/raytrace.frag\n";
+    return 1;
+  }
 
   // load starfield texture
   sf::Texture starfield_tex;
-  if (!starfield_tex.loadFromFile("starfield.png")) {
-    std::cerr << "Failed to load starfield texture (src/starfield.png); disabling starfield.\n";
+  if (!starfield_tex.loadFromFile("assets/starfield.png")) {
+    std::cerr << "Failed to load starfield texture (assets/starfield.png); disabling starfield.\n";
     star_exposure = 0.;
   } else {
     starfield_tex.setRepeated(true);
