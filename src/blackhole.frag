@@ -161,12 +161,6 @@ vec3 blackbody_rgb(float temperature) {
   return clamp(vec3(r, g, b), vec3(0.0), vec3(1.0));
 }
 
-// thin-disk temperature profile: T(r) = T_in * (r_in / r)^(3/4)
-float disk_temperature(float r) {
-  float r_in = max(disk_inner_radius, EPS);
-  return disk_temp_inner * pow(r_in / max(r, r_in), disk_temp_exponent);
-}
-
 // ----------- END Misc Physics
 
 
@@ -449,12 +443,7 @@ float init_b(float r, float sin_psi, SC_Metric metric) {
 
 // sigma here is the sign for du/dphi, not dr/lambda
 float init_sigma(float cos_psi) {
-  if (cos_psi > 0. ) {
-    return -1.;}
-  else if (cos_psi < 0. ) {
-    return 1.;}
-  else {
-    return 0.;}
+  return -sign(cos_psi);
 }
 
 // -------- END Make Geodesic Support Functions
@@ -616,8 +605,9 @@ point_cart3 step_ray(inout SC_Null_Geodesic ray) {
 void check_bh(point_cart3 point, inout float passthrough, inout vec3 color) {
   if (passthrough <= 0.) return;
 
-  float dist = sqrt(point.x*point.x + point.y*point.y + point.z*point.z);
-  bool in_event_horizon = dist < 3.*M; // 3M is closest stable orbit, anything within die
+  float dist2 = point.x*point.x + point.y*point.y + point.z*point.z;
+  float r_horizon = 3.0 * M; // 3M is closest stable orbit, anything within die
+  bool in_event_horizon = dist2 < r_horizon * r_horizon;
   if (in_event_horizon) {
     color = min(color+vec3(0.0), vec3(1.0));
     passthrough = 0.;
@@ -655,12 +645,14 @@ void check_disk(point_cart3 point, point_cart3 last_point, inout float passthrou
   if (!crosses_disk) return;
 
   // disk emissivity and color, thin disk model
-  float r_hit = sqrt(hit_point.x*hit_point.x + hit_point.y*hit_point.y);
-  float temp = disk_temperature(r_hit);
+  float r_hit = sqrt(r2);
+  float r_in = max(disk_inner_radius, EPS);
+  float ratio = r_in / max(r_hit, r_in);
+  float temp = disk_temp_inner * pow(ratio, disk_temp_exponent);
   vec3 bb = blackbody_rgb(temp);
 
   // emissivity falls off by r^-q, w/ q ~= 3
-  float emissivity = pow(disk_inner_radius / max(r_hit, disk_inner_radius), disk_emissivity_exponent);
+  float emissivity = pow(ratio, disk_emissivity_exponent);
 
   // color
   float opacity = clamp(0.7*emissivity, 0.0, 1.0);
@@ -806,7 +798,9 @@ void main() {
   // ------ END Init marching values
 
   // check that camera is not inside event horizon
-  if (sqrt(cam_pos.x*cam_pos.x + cam_pos.y*cam_pos.y + cam_pos.z*cam_pos.z) >= 2.*metric.M) {
+  float cam_r2 = cam_pos.x*cam_pos.x + cam_pos.y*cam_pos.y + cam_pos.z*cam_pos.z;
+  float cam_rs = 2.0 * metric.M;
+  if (cam_r2 >= cam_rs * cam_rs) {
 
     // -------------------- Ray Marching Loop --------------------- //
     for (int step=0; step<max_steps; step++) {
