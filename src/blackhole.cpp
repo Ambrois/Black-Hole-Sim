@@ -8,6 +8,7 @@
 #include <iostream>
 #include <tuple>
 #include <cassert>
+#include <string>
 
 // TODO needed features
 //  - parallel transport camera vectors during camera movement to remove weird shifting
@@ -473,6 +474,7 @@ int main() {
   double star_exposure = 1.;
 
 
+
   // ---- END Parameters --------------------------------- //
 
   // --------------------- Create and configure quad, shader, window -------------- //
@@ -503,12 +505,29 @@ int main() {
   sf::RenderStates states;
   states.shader = &shader;
 
+  // clock for FPS calculation
+  sf::Clock fps_clock;
+
   // create window
   sf::RenderWindow win(sf::VideoMode(W,H), "Black Hole Visualizer");
   win.setFramerateLimit(60);
   win.setMouseCursorGrabbed(true); // grab and hide mouse bc FPS style
   win.setMouseCursorVisible(false);
   sf::Vector2i win_center(int(win.getSize().x/2), int(win.getSize().y/2));
+
+  // FPS display setup
+  sf::Font fps_font;
+  bool fps_enabled = false;
+  sf::Text fps_text;
+  if (!fps_font.loadFromFile("assets/DejaVuSans.ttf")) {
+    std::cerr << "Failed to load font (assets/DejaVuSans.ttf); FPS display disabled.\n";
+  } else {
+    fps_text.setFont(fps_font);
+    fps_text.setCharacterSize(16);
+    fps_text.setFillColor(sf::Color::White);
+    fps_text.setPosition(5.f, 5.f);
+    fps_enabled = true;
+  }
 
   // ------- END Create and Configure window stuff ---------------------------------- //
 
@@ -553,6 +572,12 @@ int main() {
     // handle camera stuff
     cam.manage_inputs(relative_mouse_pos);
     
+    // FPS calculation
+    float dt = fps_clock.restart().asSeconds();
+    if (fps_enabled && dt > 0.f) {
+      float fps = 1.f / dt;
+      fps_text.setString("FPS: " + std::to_string(static_cast<int>(fps)));
+    }
 
     // Set shader uniforms that change during game loop
     // camera 
@@ -571,6 +596,9 @@ int main() {
     // Drawing to window
     win.clear();
     win.draw(screen, states);
+    if (fps_enabled) {
+      win.draw(fps_text);
+    }
     win.display();
     
   } // ----- END Game Loop ---------------------------------- //
