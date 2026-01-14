@@ -304,7 +304,7 @@ class Camera {
     point_cart3 c; // camera position
 
     vec_cart3 // the orthonormal tripod
-      d_vec,  // facing this dir, pointer of left hand TODO Changed to left
+      d_vec,  // facing this dir, pointer of left hand
       w_vec, // middle finger
       h_vec; // thumb
                                 
@@ -313,6 +313,8 @@ class Camera {
     double FOV_w{1.3};
     double wasd_sensitivity{3.};
     double turn_sensitivity{0.001};
+    double pitch_angle{0.0};
+    const double max_pitch{PI * 0.49};
     const double TWO_PI = PI * 2.0;
     size_t W, H; // number of pixels, width and height
     SC_Metric metric;
@@ -398,7 +400,7 @@ class Camera {
       // if mouse moved
       if (relative_mouse_pos.x != 0 or relative_mouse_pos.y != 0) {
         // relative_mouse_pos is in pixel coords
-        double pitch = relative_mouse_pos.y * turn_sensitivity;
+        double delta_pitch = relative_mouse_pos.y * turn_sensitivity;
         double yaw = relative_mouse_pos.x * turn_sensitivity;
 
         // yaw
@@ -406,7 +408,13 @@ class Camera {
         w_vec = metric.normalize(cross(UP_VEC, d_vec));
 
         // pitch
-        d_vec = rotate_vector(d_vec, w_vec, pitch);
+        double new_pitch = pitch_angle + delta_pitch;
+        if (new_pitch > max_pitch) new_pitch = max_pitch;
+        if (new_pitch < -max_pitch) new_pitch = -max_pitch;
+        double applied_pitch = new_pitch - pitch_angle;
+        pitch_angle = new_pitch;
+
+        d_vec = rotate_vector(d_vec, w_vec, applied_pitch);
         h_vec = metric.normalize(cross(w_vec, d_vec));
 
       } // mouse moved
