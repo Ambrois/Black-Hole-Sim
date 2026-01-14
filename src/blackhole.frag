@@ -1,17 +1,14 @@
 // To Dos
-// TODO Debugging
-//  - make disk look not choppy
-//  - fix the butt shape
-//    - it could come from numerical problems in the step function
-//    - it could do with numerical problems in the rotation
+// Debugging / visuals
+//  - make disk look less choppy and fix the "butt" shape
+//    - could come from numerical issues in the step function
+//    - could come from numerical issues in the rotation
 //
-// TODO Features
+// Features / cleanup
 //  - document everything better
-//  - have local stepping params be passed in from cpu
-//  - size disk based on stable innermost orbit, and then some fixed reasonable upper bound scaled w/ mass
-//  - color disk based on temperature
-//  - the center is kinda weird bc param wrt phi collapses, might need to specifically approximate light going directly towards origin with straight line marches
-//  - once it's working, can start culling unused functions
+//  - optionally pass local stepping params in from CPU
+//  - revisit disk size and bounds heuristics
+//  - handle rays aimed directly toward the origin more carefully (phi collapses)
 
 
 // ------------- Uniforms
@@ -187,14 +184,14 @@ struct point_cart3 { float x,y,z; };
 struct point_polar3 { float r,theta,phi; };
 
 struct vec_cart3 { point_cart3 p; float x_dot, y_dot, z_dot; };
-struct vec_polar3 { point_polar3 p; float r_dot, theta_dot, phi_dot; }; // not used?
+struct vec_polar3 { point_polar3 p; float r_dot, theta_dot, phi_dot; };
 
 // 2d
-struct point_cart2 { float x,y; }; // not used?
+struct point_cart2 { float x,y; };
 struct point_polar2 { float r, phi; };
 
-struct vec_cart2 { point_cart2 p; float x_dot, y_dot; }; // not used?
-struct vec_polar2 { point_polar2 p; float r_dot, phi_dot; }; // not used?
+struct vec_cart2 { point_cart2 p; float x_dot, y_dot; };
+struct vec_polar2 { point_polar2 p; float r_dot, phi_dot; };
 
 // and then we use built in vec3 for color
 
