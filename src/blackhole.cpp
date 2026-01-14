@@ -5,7 +5,6 @@
 #include <SFML/Graphics.hpp>
 #include <cmath>
 #include <algorithm>
-#include <cstdint>
 #include <iostream>
 #include <tuple>
 #include <cassert>
@@ -313,7 +312,6 @@ class Camera {
     double turn_sensitivity{0.001};
     double pitch_angle{0.0};
     const double max_pitch{PI * 0.49};
-    const double TWO_PI = PI * 2.0;
     size_t W, H; // number of pixels, width and height
     SC_Metric metric;
 
@@ -479,8 +477,6 @@ int main() {
 
   // --------------------- Create and configure quad, shader, window -------------- //
 
-  double r_s = 2.*metric.M;
-
   sf::RectangleShape screen{ sf::Vector2f(static_cast<float>(W), static_cast<float>(H)) };
   screen.setPosition(0.f, 0.f);
 
@@ -508,7 +504,7 @@ int main() {
   states.shader = &shader;
 
   // create window
-  sf::RenderWindow win(sf::VideoMode(W,H), "Raymarching");
+  sf::RenderWindow win(sf::VideoMode(W,H), "Black Hole Visualizer");
   win.setFramerateLimit(60);
   win.setMouseCursorGrabbed(true); // grab and hide mouse bc FPS style
   win.setMouseCursorVisible(false);
