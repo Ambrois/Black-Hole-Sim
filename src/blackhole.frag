@@ -434,7 +434,6 @@ struct SC_Null_Geodesic{
   u_vec current_u;  // mutable
   float current_r;  //
   float current_phi;//
-  bool left; // emission angle to the "left" means sin(psi)<0
 	float h;
 	int max_steps;
   float current_step;  // mutable
@@ -531,13 +530,6 @@ SC_Null_Geodesic make_SC_Null_Geodesic(
   point_cart2 start_pos_cart = point_cart2(start_pos_vec3.x, start_pos_vec3.y);
   point_polar2 start_pos = convert_point_c2p(start_pos_cart);
 
-  // if the photon is angled to the left, then phi should rotate the opposite direction
-  //  and we should do the entire thing but mirrored
-  bool left = false;
-  if (sin_psi < 0.) {
-    left = true;
-  }
-
   float r0 = start_pos.r;
   float phi0 = start_pos.phi;
 
@@ -556,7 +548,6 @@ SC_Null_Geodesic make_SC_Null_Geodesic(
       start_u_vec, 
       r0, 
       phi0,
-      left, 
       h, 
       max_steps, 0.);
 }
