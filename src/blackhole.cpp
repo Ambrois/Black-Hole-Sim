@@ -12,8 +12,6 @@
 
 // TODO needed features
 //  - parallel transport camera vectors during camera movement to remove weird shifting
-//  - fix one of the camera FOVs given pixel ratio
-//  - looking straight up or down fucks the angle, stop from looking up/down too much
 
 
 using std::cos, std::sin, std::min, std::max, std::cout, std::endl;
@@ -309,8 +307,8 @@ class Camera {
       h_vec; // thumb
                                 
     double d{1.};                // distance to frame
-    double FOV_h{1.3}; 
-    double FOV_w{1.3};
+    double FOV_h{1.}; 
+    double FOV_w;                // this gets fixed via horizontal and aspect ratio
     double wasd_sensitivity{3.};
     double turn_sensitivity{0.001};
     double pitch_angle{0.0};
@@ -331,6 +329,10 @@ class Camera {
     : c{x,y,z}, W{W}, H{H}, metric{metric} {
 
       //cout << "Initiating Camera" << endl;
+
+      // derive horizontal FOV from vertical FOV and aspect ratio
+      double aspect_rat = static_cast<double>(W) / static_cast<double>(H);
+      FOV_w = 2.0 * std::atan(aspect_rat * std::tan(FOV_h / 2.0));
 
       point_polar3 polar_c = convert_point_c2p(c);
 
